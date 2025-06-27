@@ -1,111 +1,136 @@
 
-# Logistic Regression on Breast Cancer Dataset 🧠
+# 🚢 Titanic Data Preprocessing and Outlier Removal
 
-This notebook demonstrates binary classification using **Logistic Regression** on the Breast Cancer dataset. It includes:
-
-✅ Data Preprocessing  
-✅ Train/Test Split and Feature Scaling  
-✅ Model Training and Evaluation  
-✅ Visualization (Confusion Matrix, ROC Curve, Sigmoid Function)  
+This project demonstrates basic data preprocessing on the Titanic dataset using Python and Pandas in Google Colab.
 
 ---
 
-## 🚀 Step-by-Step Code
+## 📁 Dataset
+We use the Titanic dataset containing passenger information such as age, fare, gender, class, etc.
+
+---
+
+## 🛠️ Tasks Performed
+
+### 1. 🔍 Import Dataset & Basic Info
+- Load the CSV file using pandas.
+- Check the first few rows using `df.head()`.
+- View data types and null values using `df.info()` and `df.isnull().sum()`.
 
 ```python
-# STEP 0: IMPORT LIBRARIES
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
 
-from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.metrics import confusion_matrix, precision_score, recall_score, roc_auc_score, roc_curve
-
-# STEP 1: LOAD AND CLEAN DATA
-# Make sure to upload your CSV file as 'dataset.csv' using the left panel in Colab
-df = pd.read_csv('dataset.csv')
-
-# Drop unnecessary columns
-df = df.drop(['id', 'Unnamed: 32'], axis=1)
-
-# Encode 'diagnosis': M = 1 (Malignant), B = 0 (Benign)
-df['diagnosis'] = df['diagnosis'].map({'M': 1, 'B': 0})
-
-# STEP 2: SPLIT AND STANDARDIZE
-X = df.drop('diagnosis', axis=1)
-y = df['diagnosis']
-
-# Split into train and test
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
-
-# Standardize the data
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-# STEP 3: TRAIN LOGISTIC REGRESSION
-model = LogisticRegression()
-model.fit(X_train_scaled, y_train)
-
-# STEP 4: EVALUATE MODEL
-y_pred = model.predict(X_test_scaled)
-y_prob = model.predict_proba(X_test_scaled)[:, 1]
-
-# Metrics
-conf_matrix = confusion_matrix(y_test, y_pred)
-precision = precision_score(y_test, y_pred)
-recall = recall_score(y_test, y_pred)
-roc_auc = roc_auc_score(y_test, y_prob)
-
-print("🔍 Precision:", precision)
-print("🔍 Recall:", recall)
-print("🔍 ROC-AUC Score:", roc_auc)
-
-# PLOT CONFUSION MATRIX & ROC CURVE
-plt.figure(figsize=(15, 6))
-
-# Confusion Matrix
-plt.subplot(1, 2, 1)
-sns.heatmap(conf_matrix, annot=True, fmt='d', cmap='Blues')
-plt.title("Confusion Matrix")
-plt.xlabel("Predicted")
-plt.ylabel("Actual")
-
-# ROC Curve
-fpr, tpr, thresholds = roc_curve(y_test, y_prob)
-plt.subplot(1, 2, 2)
-plt.plot(fpr, tpr, label=f'ROC Curve (AUC = {roc_auc:.2f})')
-plt.plot([0, 1], [0, 1], linestyle='--', color='gray')
-plt.xlabel("False Positive Rate")
-plt.ylabel("True Positive Rate")
-plt.title("ROC Curve")
-plt.legend()
-
-plt.tight_layout()
-plt.show()
-
-# STEP 5: SIGMOID FUNCTION EXPLANATION
-def sigmoid(z):
-    return 1 / (1 + np.exp(-z))
-
-# Plot Sigmoid Function
-z_vals = np.linspace(-10, 10, 100)
-sigmoid_vals = sigmoid(z_vals)
-
-plt.figure(figsize=(6, 4))
-plt.plot(z_vals, sigmoid_vals, color='green')
-plt.title("Sigmoid Function")
-plt.xlabel("z (logit)")
-plt.ylabel("Probability")
-plt.grid(True)
-plt.show()
+df = pd.read_csv('/content/Titanic-Dataset.csv')
+print(df.head())
+print(df.info())
+print(df.isnull().sum())
 ```
 
 ---
 
-## 📌 Notes
-- Ensure your dataset is uploaded as `dataset.csv` in Colab.
-- Adjust column names or preprocessing if using a different dataset.
+### 2. 🧼 Handle Missing Values
+- Fill missing **numerical** values (`Age`) using **mean**.
+- Fill missing **categorical** values (`Embarked`) using **mode**.
+
+```python
+df['Age'].fillna(df['Age'].mean(), inplace=True)
+df['Embarked'].fillna(df['Embarked'].mode()[0], inplace=True)
+```
+
+---
+
+### 3. 🔢 Encode Categorical Features
+Convert categorical columns to numerical using **Label Encoding**.
+
+```python
+from sklearn.preprocessing import LabelEncoder
+
+le = LabelEncoder()
+df['Sex'] = le.fit_transform(df['Sex'])            # male=1, female=0
+df['Embarked'] = le.fit_transform(df['Embarked'])  # C=0, Q=1, S=2 (may vary)
+```
+
+---
+
+### 4. 📐 Standardize Numerical Features
+Standardize `Age` and `Fare` so they are on the same scale using `StandardScaler`.
+
+```python
+from sklearn.preprocessing import StandardScaler
+
+scaler = StandardScaler()
+df[['Age', 'Fare']] = scaler.fit_transform(df[['Age', 'Fare']])
+print("\n📐 Standardized 'Age' and 'Fare':\n", df[['Age', 'Fare']].head())
+```
+
+ℹ️ **Standardization Formula**:  
+`z = (x - μ) / σ`  
+This ensures the values have mean = 0 and standard deviation = 1.
+
+---
+
+### 5. 📊 Visualize & Remove Outliers (IQR Method)
+Use **Interquartile Range (IQR)** method to detect and remove outliers from `Age` and `Fare`.
+
+```python
+for col in ['Age', 'Fare']:
+    Q1 = df[col].quantile(0.25)
+    Q3 = df[col].quantile(0.75)
+    IQR = Q3 - Q1
+    lower = Q1 - 1.5 * IQR
+    upper = Q3 + 1.5 * IQR
+    df = df[(df[col] >= lower) & (df[col] <= upper)]
+```
+
+```python
+print("\n✅ Dataset shape after removing outliers:", df.shape)
+```
+
+🧹 This removes values that are too high or too low compared to the normal data range.
+
+---
+
+## ✅ Final Output
+
+```python
+print(df.shape)
+```
+Shows the new shape of the dataset after cleaning and outlier removal.
+
+---
+
+## 💡 Summary of Preprocessing Steps
+
+| Step              | Description                                      |
+|-------------------|--------------------------------------------------|
+| 1. Import         | Load and explore the Titanic dataset             |
+| 2. Missing Values | Fill missing Age with mean, Embarked with mode  |
+| 3. Encoding       | Convert text (categorical) columns to numbers    |
+| 4. Standardization| Scale Age and Fare using StandardScaler          |
+| 5. Outliers       | Remove extreme values using IQR method           |
+
+---
+
+## 👩‍💻 Tools Used
+- Python  
+- Pandas  
+- Scikit-learn  
+- Google Colab  
+
+---
+
+## 📎 Notes
+This preprocessing prepares the dataset for:
+
+- 🚀 Machine Learning models  
+- 📊 Exploratory Data Analysis (EDA)  
+- 🤖 Classification tasks like survival prediction  
+
+---
+
+## 📌 Sample Output Preview
+
+```python
+✅ Dataset shape after removing outliers: (XXX, YYY)
+```
+Replace `XXX` and `YYY` with your actual dataset shape after preprocessing.
