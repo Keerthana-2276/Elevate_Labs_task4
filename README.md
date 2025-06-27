@@ -1,3 +1,18 @@
+
+# Logistic Regression on Breast Cancer Dataset 🧠
+
+This notebook demonstrates binary classification using **Logistic Regression** on the Breast Cancer dataset. It includes:
+
+✅ Data Preprocessing  
+✅ Train/Test Split and Feature Scaling  
+✅ Model Training and Evaluation  
+✅ Visualization (Confusion Matrix, ROC Curve, Sigmoid Function)  
+
+---
+
+## 🚀 Step-by-Step Code
+
+```python
 # STEP 0: IMPORT LIBRARIES
 import pandas as pd
 import numpy as np
@@ -87,3 +102,10 @@ plt.xlabel("z (logit)")
 plt.ylabel("Probability")
 plt.grid(True)
 plt.show()
+```
+
+---
+
+## 📌 Notes
+- Ensure your dataset is uploaded as `dataset.csv` in Colab.
+- Adjust column names or preprocessing if using a different dataset.
